@@ -1,0 +1,17 @@
+name = "email-forwarding-worker"
+compatibility_date = "2024-05-01"
+account_id = "9741670e7049cce1726de0b762141d6f"
+workers_dev = true
+
+[vars]
+ZONE_ID = "your_zone_id"
+API_TOKEN = "your_api_token"
+
+# 修正点：kv_namespaces 应该是数组格式
+[kv_namespaces]
+binding = "EMAIL_EXPIRY_KV"
+id = "your_kv_namespace_id"
+preview_id = "same_as_id_or_different"  # 可选，用于预览环境
+
+[triggers]
+crons = ["0 * * * *"]
