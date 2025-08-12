@@ -1,0 +1,18 @@
+name = "email-forwarding-worker"
+compatibility_date = "2024-05-01"
+account_id = "9741670e7049cce1726de0b762141d6f"  # 替换为你的Cloudflare账户ID
+workers_dev = true
+
+# 环境变量（也可在Cloudflare Dashboard设置）
+[vars]
+ZONE_ID = "your_zone_id"
+API_TOKEN = "your_api_token"
+
+# KV存储绑定
+[kv_namespaces]
+binding = "EMAIL_EXPIRY_KV"
+id = "your_kv_namespace_id"
+
+# 定时触发器
+[triggers]
+crons = ["0 * * * *"]  # 每小时运行一次
