@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>自定义邮箱注册</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input, select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; }
+        button { 
+            background: #4CAF50; color: white; border: none; 
+            padding: 12px 20px; cursor: pointer; width: 100%;
+            font-size: 16px; border-radius: 4px; 
+        }
+        button:hover { background: #45a049; }
+        #result { 
+            margin-top: 20px; padding: 15px; border-radius: 4px;
+            background: #f8f9fa; border: 1px solid #ddd;
+        }
+        .expiry-option { display: flex; align-items: center; margin: 5px 0; }
+        .expiry-option input { width: auto; margin-right: 10px; }
+    </style>
+</head>
+<body>
+    <h1>自定义邮箱注册</h1>
+    
+    <div class="form-group">
+        <label>邮箱类型:</label>
+        <select id="emailType" class="form-control">
+            <option value="permanent">永久邮箱</option>
+            <option value="temporary">临时邮箱</option>
+        </select>
+    </div>
+
+    <div id="tempOptions" style="display:none;">
+        <label>过期时间:</label>
+        <div class="expiry-options">
+            <div class="expiry-option">
+                <input type="radio" id="expiry10m" name="expiry" value="10">
+                <label for="expiry10m">10分钟</label>
+            </div>
+            <div class="expiry-option">
+                <input type="radio" id="expiry1h" name="expiry" value="60" checked>
+                <label for="expiry1h">1小时</label>
+            </div>
+            <div class="expiry-option">
+                <input type="radio" id="expiry5h" name="expiry" value="300">
+                <label for="expiry5h">5小时</label>
+            </div>
+            <div class="expiry-option">
+                <input type="radio" id="expiry24h" name="expiry" value="1440">
+                <label for="expiry24h">24小时</label>
+            </div>
+            <div class="expiry-option">
+                <input type="radio" id="expiry7d" name="expiry" value="10080">
+                <label for="expiry7d">7天 (7×24小时)</label>
+            </div>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label>自定义前缀:</label>
+        <input type="text" id="prefix" placeholder="例如: myname" 
+               pattern="[a-z0-9-]+" title="只能包含小写字母、数字和横线">
+        <small>@yourdomain.com</small>
+    </div>
+
+    <div class="form-group">
+        <label>转发到您的真实邮箱:</label>
+        <input type="email" id="targetEmail" required placeholder="your@real-email.com">
+    </div>
+
+    <button id="registerBtn">立即注册</button>
+    <div id="result"></div>
+
+    <script>
+        document.getElementById('emailType').addEventListener('change', function() {
+            const tempDiv = document.getElementById('tempOptions');
+            tempDiv.style.display = this.value === 'temporary' ? 'block' : 'none';
+        });
+
+        document.getElementById('registerBtn').addEventListener('click', async function() {
+            const prefix = document.getElementById('prefix').value.trim().toLowerCase();
+            const targetEmail = document.getElementById('targetEmail').value.trim();
+            const emailType = document.getElementById('emailType').value;
+            const expiryMinutes = document.querySelector('input[name="expiry"]:checked')?.value;
+            
+            // 验证输入
+            if (!prefix || !targetEmail) {
+                showResult('请填写所有必填字段', 'error');
+                return;
+            }
+            
+            if (!/^[a-z0-9-]+$/.test(prefix)) {
+                showResult('前缀只能包含小写字母、数字和横线(-)', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch('https://email.turkey1.workers.dev/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        prefix,
+                        targetEmail,
+                        emailType,
+                        expiryMinutes: emailType === 'temporary' ? expiryMinutes : 0
+                    })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    let message = `✅ 成功注册: <strong>${prefix}@yourdomain.com</strong>`;
+                    if (emailType === 'temporary') {
+                        message += `<br>⏳ 过期时间: ${formatExpiryText(expiryMinutes)}`;
+                    }
+                    showResult(message, 'success');
+                } else {
+                    showResult(`❌ 错误: ${data.error || '未知错误'}`, 'error');
+                }
+            } catch (error) {
+                showResult(`❌ 网络错误: ${error.message}`, 'error');
+            }
+        });
+
+        function formatExpiryText(minutes) {
+            const mins = parseInt(minutes);
+            if (mins === 10) return '10分钟后';
+            if (mins === 60) return '1小时后';
+            if (mins === 300) return '5小时后';
+            if (mins === 1440) return '24小时后';
+            if (mins === 10080) return '7天后';
+            return '';
+        }
+
+        function showResult(message, type) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = message;
+            resultDiv.style.color = type === 'error' ? '#dc3545' : '#28a745';
+            resultDiv.style.borderColor = type === 'error' ? '#f5c6cb' : '#c3e6cb';
+        }
+    </script>
+</body>
+</html>
+
